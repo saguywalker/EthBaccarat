@@ -27,6 +27,7 @@ contract ethBaccarat {
 
     function CreateRoom() public payable returns(uint) {
         uint roomID = roomNo;
+        require( msg.value >= 100000000000000000 wei);
         roomInfo[roomID] = Room(new address[](0), new bool[](0), 0,3, msg.value);
         addPlayerToRoom(roomID, msg.sender);
         ++roomNo;
@@ -45,6 +46,7 @@ contract ethBaccarat {
     function JoinRoom() public returns(uint) {
         require(playerToRoom[msg.sender] == 0, "This person already joins in another room");
         uint roomID = findEmptyRoom();
+        require( msg.value >= 50000000000000000 wei , "Please transfer more than 0.05 ETH");
         require(roomID != uint(-1), "No room available");
         addPlayerToRoom(roomID, msg.sender);
         return roomID;
@@ -91,7 +93,7 @@ contract ethBaccarat {
         }
     }
 
-    function compareWin(uint playerNo1, uint playerNo2,uint roomID) private pure returns(uint) {
+    function compareWin(uint p1, uint p2, uint roomID) private view returns(uint) {
         uint sumHost = matchPlayerToGame[roomID][p1][0] + matchPlayerToGame[roomID][p1][1];
         uint sumPlayer = matchPlayerToGame[roomID][p2][0] + matchPlayerToGame[roomID][p2][2];
         if (sumHost > sumPlayer){
