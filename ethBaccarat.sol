@@ -12,22 +12,40 @@ contract ethBaccarat {
         address[] playerAddr;
         uint readyCount;
         uint sizeRoom;
-        uint payCount;
+	    uint valueToCreate;
+		
     }
-    mapping(uint => mapping(uint => uint[])) _trial;
+	
+    mapping(uint => mapping(uint => uint[])) matchPlayerToGame;
     mapping(uint => Room) roomInfo;
     mapping(address => uint) playerToRoom;
-
+	
+	
     constructor() public {
         roomNo = 1;
     }
 
     function createRoom() public returns(uint) {
         playerToRoom[msg.sender] = roomNo;
-        roomInfo[roomNo] = Room(new address[](0), 1,3,0);
+		
+		 roomInfo[roomNo] = Room(new address[](0), 1,3,0);
+		
+		roomInfo[roomNo].valueToCreate = msg.value;
+      
         ++roomNo;
         return roomNo-1;
+        
     }
+	
+	function fineToClose(uint roomNo) public payable  {
+	    
+	    uint numberPlayer = roomInfo[roomNo].playerAddr.length;
+	    uint refund = roomInfo[roomNo].valueToCreate/numberPlayer;
+	    
+	    for ( uint i = 0 ; i <= numberPlayer ; i++){
+	        roomInfo[roomNo].playerAddr[i].transfer(refund);
+	    }
+    }	
 
     function joinRoom() public returns(uint) {
         require(playerToRoom[msg.sender] == 0, "This person already joins in another room");
@@ -103,40 +121,32 @@ contract ethBaccarat {
     //     uint idxPlayer = IndexPlayerInRoom(r);
     //     deletePlayerIndex(roomID, idxPlayer);
     // }
-    function randomCard(uint256 room) private{
-        bool duplicate;
-        uint numPlayers = roomInfo[room].playerAddr.length;
-        uint numCards = numPlayers * 2;
-        uint rand;
-        uint[] prev;
+    function randomCard(uint8 room) private{
+    bool duplicate;
+    uint256 numPlayers = roomInfo[room].playerAddr.length;
+    uint256 numCards = numPlayers * 2;
+    uint256 rand;
+    uint256[] prev;
+    duplicate = false;
+    for(uint i = 0; i < numPlayers;i++){
         duplicate = false;
-        for(uint i = 0; i < numPlayers;i++){
-            duplicate = false;
-        do{
-            rand = uint(keccak256(now, i));
-            for(uint j = 0; j < prev.length;j++){
-                if (rand == prev[j]){
-                    duplicate = true;
-                    break;
-                }
-            }
+      do{
+        rand = uint256(keccak256(now, i));
+        for(uint j = 0; j < prev.length;j++){
+          if (rand == prev[j]){
+            duplicate = true;
+            break;
+          }
         }
-        while(duplicate);
-        _trial[room][uint8(i/2)].push(rand/13);
-        prev.push(rand);
-        }
+      } 
+      while(duplicate);
+      matchPlayerToGame[room][uint8(i/2)].push(rand/13);
+      prev.push(rand);
     }
-
-    function () payable {
-        Room memory room = roomInfo[playerToRoom[msg.sender]];
-        if(msg.value > 0){
-            room.payCount++;
-        }
-        if(room.payCount == room.playerAddr.length){
-            randomCard(playerToRoom[msg.sender]);
-        }
-    }
-
-
+    
+    
+    
+    
+  }
 
 }
