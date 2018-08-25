@@ -27,7 +27,7 @@ contract ethBaccarat {
 
     function CreateRoom() public payable returns(uint) {
         uint roomID = roomNo;
-        require( msg.value >= 100000000000000000 wei);
+        require(msg.value >= 100000000000000000 wei, "Please transfer more than 0.1 ETH");
         roomInfo[roomID] = Room(new address[](0), new bool[](0), 0,3, msg.value);
         addPlayerToRoom(roomID, msg.sender);
         ++roomNo;
@@ -35,18 +35,20 @@ contract ethBaccarat {
     }
 
     function FineToClose(uint roomID) public payable  {
-        uint numberPlayer = roomInfo[roomID].playerAddr.length;
-        uint refund = roomInfo[roomID].valueToCreate/numberPlayer;
-
-        for ( uint i = 0 ; i <= numberPlayer ; i++){
-            roomInfo[roomID].playerAddr[i].transfer(refund);
+        Room memory r = roomInfo[roomID];
+        uint numberPlayer = r.playerAddr.length;
+        uint refund = r.valueToCreate/numberPlayer;
+        for ( uint i = 0 ; i < numberPlayer ; i++){
+            if(r.playerAddr[i] != msg.sender){
+                r.playerAddr[i].transfer(refund);
+            }
         }
     }
 
     function JoinRoom() public payable returns(uint) {
         require(playerToRoom[msg.sender] == 0, "This person already joins in another room");
         uint roomID = findEmptyRoom();
-        require( msg.value >= 50000000000000000 wei , "Please transfer more than 0.05 ETH");
+        require(msg.value >= 50000000000000000 wei, "Please transfer more than 0.05 ETH");
         require(roomID != uint(-1), "No room available");
         addPlayerToRoom(roomID, msg.sender);
         return roomID;
@@ -71,6 +73,10 @@ contract ethBaccarat {
     function GetRoomByRoomNo(uint roomID) public view returns(address[], bool[], uint, uint) {
         Room memory r = roomInfo[roomID];
         return (r.playerAddr, r.playerReady, r.readyCount, r.sizeRoom);
+    }
+
+    function GetRoomNoByAddress() public view returns(uint) {
+        return playerToRoom[msg.sender];
     }
 
     function GetCards(uint roomID, uint idxPerson) public view returns(uint[]) {
@@ -180,7 +186,7 @@ contract ethBaccarat {
             prev.push(rand);
             rand /= 13;
             if(rand == 10 || rand == 11 || rand == 12){
-              rand = 0;
+                rand = 0;
             }
             matchPlayerToGame[room][uint8(i/2)].push(rand);
         }
