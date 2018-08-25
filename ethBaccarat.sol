@@ -78,21 +78,29 @@ contract ethBaccarat {
     function endRound(uint roomID) public payable {
         Room memory r = roomInfo[roomID];
         for(uint i = 1; i<r.sizeRoom; i++){
-            uint status = compareWin(0, i);
+            uint status = compareWin(0, i, roomID);
             require(status == WINSTATUS || status == DRAWSTATUS || status == LOSESTATUS, "status is invalid");
             if(status == WINSTATUS){
-
+                //transfer
             } else if (status == LOSESTATUS) {
-
+                //transfer
             } else {
-
+                //transfer
             }
             // addressTarget.transfer();
         }
     }
 
-    function compareWin(uint playerNo1, uint playerNo2) private pure returns(uint) {
-        return WINSTATUS;
+    function compareWin(uint playerNo1, uint playerNo2,uint roomID) private pure returns(uint) {
+        uint sumHost = matchPlayerToGame[roomID][p1][0] + matchPlayerToGame[roomID][p1][1];
+        uint sumPlayer = matchPlayerToGame[roomID][p2][0] + matchPlayerToGame[roomID][p2][2];
+        if (sumHost > sumPlayer){
+            return WINSTATUS;
+        }else if(sumHost < sumPlayer){
+            return LOSESTATUS;
+        }else{
+            return DRAWSTATUS;
+        }
     }
 
     function findEmptyRoom() private view returns(uint) {
