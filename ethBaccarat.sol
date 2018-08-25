@@ -43,7 +43,7 @@ contract ethBaccarat {
         }
     }
 
-    function JoinRoom() public returns(uint) {
+    function JoinRoom() public payable returns(uint) {
         require(playerToRoom[msg.sender] == 0, "This person already joins in another room");
         uint roomID = findEmptyRoom();
         require( msg.value >= 50000000000000000 wei , "Please transfer more than 0.05 ETH");
