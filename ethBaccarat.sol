@@ -10,10 +10,10 @@ contract ethBaccarat {
 
     struct Room {
         address[] playerAddr;
+        bool[] playerReady;
         uint readyCount;
         uint sizeRoom;
-	    uint valueToCreate;
-		
+        uint valueToCreate;
     }
 	
     mapping(uint => mapping(uint => uint[])) matchPlayerToGame;
@@ -25,39 +25,59 @@ contract ethBaccarat {
         roomNo = 1;
     }
 
-    function createRoom() public returns(uint) {
-        playerToRoom[msg.sender] = roomNo;
-		
-		 roomInfo[roomNo] = Room(new address[](0), 1,3,0);
-		
-		roomInfo[roomNo].valueToCreate = msg.value;
-      
+    function CreateRoom() public payable returns(uint) {
+        uint roomID = roomNo;
+        roomInfo[roomID] = Room(new address[](0), new bool[](0), 0,3, msg.value);
+        addPlayerToRoom(roomID, msg.sender);
         ++roomNo;
-        return roomNo-1;
-        
+        return roomID;
     }
 	
-	function fineToClose(uint roomNo) public payable  {
-	    
-	    uint numberPlayer = roomInfo[roomNo].playerAddr.length;
-	    uint refund = roomInfo[roomNo].valueToCreate/numberPlayer;
-	    
-	    for ( uint i = 0 ; i <= numberPlayer ; i++){
-	        roomInfo[roomNo].playerAddr[i].transfer(refund);
-	    }
+    function FineToClose(uint roomID) public payable  {
+        uint numberPlayer = roomInfo[roomID].playerAddr.length;
+        uint refund = roomInfo[roomID].valueToCreate/numberPlayer;
+
+        for ( uint i = 0 ; i <= numberPlayer ; i++){
+            roomInfo[roomID].playerAddr[i].transfer(refund);
+        }
     }	
 
-    function joinRoom() public returns(uint) {
+    function JoinRoom() public returns(uint) {
         require(playerToRoom[msg.sender] == 0, "This person already joins in another room");
         uint roomID = findEmptyRoom();
         require(roomID != uint(-1), "No room available");
-        addPlayerToRoom(roomID);
-        return (roomID);
+        addPlayerToRoom(roomID, msg.sender);
+        return roomID;
+    }
+
+    function ExitRoom() public {
+        uint roomID = playerToRoom[msg.sender];
+        require(roomID != 0, "This person is not in any room yet.");
+        removePlayerInRoom(roomID, msg.sender);
+    }
+    
+    function SetReady() public {
+        uint roomID = playerToRoom[msg.sender];
+        Room memory r = roomInfo[roomID];
+        uint idxPlayer = IndexPlayerInRoom(r, msg.sender);
+        if(roomInfo[roomID].playerReady[idxPlayer] == false){
+            roomInfo[roomID].playerReady[idxPlayer] = true;
+            ++roomInfo[roomID].readyCount;
+        }
+    }
+    
+    function GetRoomByRoomNo(uint roomID) public view returns(address[], bool[], uint, uint) {
+        Room memory r = roomInfo[roomID];
+        return (r.playerAddr, r.playerReady, r.readyCount, r.sizeRoom);
+    }
+
+    function GetCards(uint roomID, uint idxPerson) public view returns(uint[]) {
+        return matchPlayerToGame[roomID][idxPerson];
     }
 
     function endRound(uint roomID) public payable {
         Room memory r = roomInfo[roomID];
-        for(uint i=1; i<r.sizeRoom; i++){
+        for(uint i = 1; i<r.sizeRoom; i++){
             uint status = compareWin(0, i);
             require(status == WINSTATUS || status == DRAWSTATUS || status == LOSESTATUS, "status is invalid");
             if(status == WINSTATUS){
@@ -71,19 +91,12 @@ contract ethBaccarat {
         }
     }
 
-    // function exitRoom() public {
-    //     require(playerToRoom[msg.sender] != 0);
-    //     uint roomID = findEmptyRoom();
-    //     require(roomID != uint(-1));
-    //     removePlayerToRoom(roomID);
-    // }
-
     function compareWin(uint playerNo1, uint playerNo2) private pure returns(uint) {
         return WINSTATUS;
     }
 
     function findEmptyRoom() private view returns(uint) {
-        for(uint i=1; i<roomNo; i++){
+        for(uint i = 1; i<roomNo; i++){
             Room memory r = roomInfo[i];
             if(r.playerAddr.length != r.sizeRoom){
                 return i;
@@ -92,61 +105,71 @@ contract ethBaccarat {
         return uint(-1);
     }
 
-    function addPlayerToRoom(uint roomID) private {
+    function addPlayerToRoom(uint roomID, address playerAddr) private {
         roomInfo[roomID].readyCount++;
-        roomInfo[roomID].playerAddr.push(msg.sender);
-        playerToRoom[msg.sender] = roomID;
+        roomInfo[roomID].playerAddr.push(playerAddr);
+        roomInfo[roomID].playerReady.push(false);
+        playerToRoom[playerAddr] = roomID;
     }
 
-    // function deletePlayerIndex(uint roomID, uint idxPlayer) private {
-    //     uint lstPlayerID = RoomInfo[roomID].player.length-1;
-    //     RoomInfo[roomID].player[idxPlayer] = RoomInfo[roomID].player[lstPlayerID];
-    //     delete RoomInfo[roomID].player[lstPlayerID];
-    //     RoomInfo[roomID].player.length--;
-    // }
-
-    // function IndexPlayerInRoom(Room r) private view returns(uint) {
-    //     for (uint i=0;i<r.player.length; i++){
-    //         if(r.player[i].playerAddr == msg.sender){
-    //             return i;
-    //         }
-    //     }
-    //     return uint(-1);
-    // }
-
-    // function removePlayerToRoom(uint roomID) private {
-    //     RoomInfo[roomID].readyCount--;
-    //     playerToRoom[msg.sender] = 0;
-    //     Room memory r = RoomInfo[roomID];
-    //     uint idxPlayer = IndexPlayerInRoom(r);
-    //     deletePlayerIndex(roomID, idxPlayer);
-    // }
-    function randomCard(uint8 room) private{
-    bool duplicate;
-    uint256 numPlayers = roomInfo[room].playerAddr.length;
-    uint256 numCards = numPlayers * 2;
-    uint256 rand;
-    uint256[] prev;
-    duplicate = false;
-    for(uint i = 0; i < numPlayers;i++){
-        duplicate = false;
-      do{
-        rand = uint256(keccak256(now, i));
-        for(uint j = 0; j < prev.length;j++){
-          if (rand == prev[j]){
-            duplicate = true;
-            break;
-          }
+    // IndexPlayerInRoom returns the index of the playerAddr list in the room. 
+    function IndexPlayerInRoom(Room r, address playerAddr) private pure returns(uint) {
+        for (uint i = 0; i < r.playerAddr.length ; i++) {
+            if(r.playerAddr[i] == playerAddr){
+                return i;
+            }
         }
-      } 
-      while(duplicate);
-      matchPlayerToGame[room][uint8(i/2)].push(rand/13);
-      prev.push(rand);
+        return uint(-1);
+    }
+
+    // removePlayerFromAddrList removes the given playerIdx in the playerAddr list from the given room.
+    function removePlayerFromAddrList(uint roomID, uint playerIdx) private {
+        uint lstPlayerID = roomInfo[roomID].playerAddr.length-1;
+        roomInfo[roomID].playerAddr[playerIdx] = roomInfo[roomID].playerAddr[lstPlayerID];
+        delete roomInfo[roomID].playerAddr[lstPlayerID];
+        roomInfo[roomID].playerAddr.length--;
+    }
+
+    // removePlayerFromAddrList removes the given playerIdx in the playerReady list from the given room.
+    function removePlayerFromReadyList(uint roomID, uint playerIdx) private {
+        uint lstPlayerID = roomInfo[roomID].playerReady.length-1;
+        roomInfo[roomID].playerReady[playerIdx] = roomInfo[roomID].playerReady[lstPlayerID];
+        delete roomInfo[roomID].playerReady[lstPlayerID];
+        roomInfo[roomID].playerReady.length--;
     }
     
-    
-    
-    
-  }
+    // removePlayerInRoom removes the playerAddr out of the given room.
+    function removePlayerInRoom(uint roomID, address playerAddr) private {
+        Room memory r = roomInfo[roomID];
+        uint idxPlayer = IndexPlayerInRoom(r, playerAddr);
+        require(idxPlayer != uint(-1), "cannot find playerAddress in the room");
+        require(idxPlayer != 0, "caller is a host");
 
+        roomInfo[roomID].readyCount--;
+        playerToRoom[playerAddr] = 0;
+        removePlayerFromAddrList(roomID, idxPlayer);
+        removePlayerFromReadyList(roomID, idxPlayer);
+    }
+
+    function randomCard(uint8 room) private {
+        bool duplicate;
+        uint256 numPlayers = roomInfo[room].playerAddr.length;
+        uint256 rand;
+        uint256[] prev;
+        duplicate = false;
+        for(uint i = 0; i < numPlayers;i++){
+            duplicate = false;
+            do{
+                rand = uint256(keccak256(now, i));
+                for(uint j = 0; j < prev.length;j++){
+                    if (rand == prev[j]){
+                        duplicate = true;
+                        break;
+                    }
+                }
+            } while(duplicate);
+            matchPlayerToGame[room][uint8(i/2)].push(rand/13);
+            prev.push(rand);
+        }
+    }
 }
