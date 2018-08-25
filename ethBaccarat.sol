@@ -21,19 +21,20 @@ contract ethBaccarat {
         roomNo = 1;
     }
 
-    function createRoom() public returns(uint) {
-        playerToRoom[msg.sender] = roomNo;
-        roomInfo[roomNo] = Room(new address[](0), 1,3);
+    function CreateRoom() public returns(uint) {
+        uint roomID = roomNo;
+        roomInfo[roomID] = Room(new address[](0), 0,3);
+        addPlayerToRoom(roomID, msg.sender);
         ++roomNo;
-        return roomNo-1;
+        return roomID;
     }
 
-    function joinRoom() public returns(uint) {
+    function JoinRoom() public returns(uint) {
         require(playerToRoom[msg.sender] == 0, "This person already joins in another room");
         uint roomID = findEmptyRoom();
         require(roomID != uint(-1), "No room available");
-        addPlayerToRoom(roomID);
-        return (roomID);
+        addPlayerToRoom(roomID, msg.sender);
+        return roomID;
     }
 
     function endRound(uint roomID) public payable {
@@ -73,10 +74,10 @@ contract ethBaccarat {
         return uint(-1);
     }
 
-    function addPlayerToRoom(uint roomID) private {
+    function addPlayerToRoom(uint roomID, address playerAddr) private {
         roomInfo[roomID].readyCount++;
-        roomInfo[roomID].playerAddr.push(msg.sender);
-        playerToRoom[msg.sender] = roomID;
+        roomInfo[roomID].playerAddr.push(playerAddr);
+        playerToRoom[playerAddr] = roomID;
     }
 
     // function deletePlayerIndex(uint roomID, uint idxPlayer) private {
