@@ -37,6 +37,12 @@ contract ethBaccarat {
         return roomID;
     }
 
+    function ExitRoom() public {
+        uint roomID = playerToRoom[msg.sender];
+        require(roomID != 0, "This person is not in any room yet.");
+        removePlayerInRoom(roomID, msg.sender);
+    }
+
     function endRound(uint roomID) public payable {
         Room memory r = roomInfo[roomID];
         for(uint i=1; i<r.sizeRoom; i++){
@@ -52,13 +58,6 @@ contract ethBaccarat {
             // addressTarget.transfer();
         }
     }
-
-    // function exitRoom() public {
-    //     require(playerToRoom[msg.sender] != 0);
-    //     uint roomID = findEmptyRoom();
-    //     require(roomID != uint(-1));
-    //     removePlayerToRoom(roomID);
-    // }
 
     function compareWin(uint playerNo1, uint playerNo2) private pure returns(uint) {
         return WINSTATUS;
@@ -80,29 +79,40 @@ contract ethBaccarat {
         playerToRoom[playerAddr] = roomID;
     }
 
-    // function deletePlayerIndex(uint roomID, uint idxPlayer) private {
-    //     uint lstPlayerID = RoomInfo[roomID].player.length-1;
-    //     RoomInfo[roomID].player[idxPlayer] = RoomInfo[roomID].player[lstPlayerID];
-    //     delete RoomInfo[roomID].player[lstPlayerID];
-    //     RoomInfo[roomID].player.length--;
-    // }
+    // IndexPlayerInRoom returns the index of the playerAddr list in the room. 
+    function IndexPlayerInRoom(Room r, address playerAddr) private pure returns(uint) {
+        for (uint i = 0; i < r.playerAddr.length ; i++) {
+            if(r.playerAddr[i] == playerAddr){
+                return i;
+            }
+        }
+        return uint(-1);
+    }
 
-    // function IndexPlayerInRoom(Room r) private view returns(uint) {
-    //     for (uint i=0;i<r.player.length; i++){
-    //         if(r.player[i].playerAddr == msg.sender){
-    //             return i;
-    //         }
-    //     }
-    //     return uint(-1);
-    // }
+    // removePlayerFromAddrList removes the given playerIdx in the playerAddr list from the given room.
+    function removePlayerFromAddrList(uint roomID, uint playerIdx) private {
+        uint lstPlayerID = roomInfo[roomID].playerAddr.length-1;
+        roomInfo[roomID].playerAddr[playerIdx] = roomInfo[roomID].playerAddr[lstPlayerID];
+        delete roomInfo[roomID].playerAddr[lstPlayerID];
+        roomInfo[roomID].playerAddr.length--;
+    }
+    
+    // removePlayerInRoom removes the playerAddr out of the given room.
+    function removePlayerInRoom(uint roomID, address playerAddr) private {
+        Room memory r = roomInfo[roomID];
+        uint idxPlayer = IndexPlayerInRoom(r, playerAddr);
+        require(idxPlayer != uint(-1), "cannot find playerAddress in the room");
+        
+        // TODO: if the player is owner of the room
+        if(idxPlayer == 0){
+            
+        }
+        
+        roomInfo[roomID].readyCount--;
+        playerToRoom[playerAddr] = 0;
+        removePlayerFromAddrList(roomID, idxPlayer);
+    }
 
-    // function removePlayerToRoom(uint roomID) private {
-    //     RoomInfo[roomID].readyCount--;
-    //     playerToRoom[msg.sender] = 0;
-    //     Room memory r = RoomInfo[roomID];
-    //     uint idxPlayer = IndexPlayerInRoom(r);
-    //     deletePlayerIndex(roomID, idxPlayer);
-    // }
     function randomCard(uint8 room) private{
     bool duplicate;
     uint256 numPlayers = roomInfo[room].playerAddr.length;
