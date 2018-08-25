@@ -83,13 +83,13 @@ contract ethBaccarat {
             uint status = compareWin(0, i, roomID);
             require(status == WINSTATUS || status == DRAWSTATUS || status == LOSESTATUS, "status is invalid");
             if(status == WINSTATUS){
-                //transfer
+                r.playerAddr[0].transfer(100000000000000000);
             } else if (status == LOSESTATUS) {
-                //transfer
+                r.playerAddr[i].transfer(100000000000000000);
             } else {
-                //transfer
+                r.playerAddr[0].transfer(100000000000000000);
+                r.playerAddr[i].transfer(100000000000000000);
             }
-            // addressTarget.transfer();
         }
     }
 
