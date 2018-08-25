@@ -102,26 +102,32 @@ contract ethBaccarat {
     //     uint idxPlayer = IndexPlayerInRoom(r);
     //     deletePlayerIndex(roomID, idxPlayer);
     // }
-    function randomCard(uint8 room) private payable{
-    bool duplicate = false;
-    numPlayers = roomInfo[room].playerAddr.length;
-    uint8 numCards = numPlayers * 2;
-    uint8 rand;
-    uint8[] prev;
+    function randomCard(uint8 room) private{
+    bool duplicate;
+    uint256 numPlayers = roomInfo[room].playerAddr.length;
+    uint256 numCards = numPlayers * 2;
+    uint256 rand;
+    uint256[] prev;
     duplicate = false;
-    for(uint8 i = 0; i < numPlayers;i++){
+    for(uint i = 0; i < numPlayers;i++){
+        duplicate = false;
       do{
-        rand = keccak(now + i);
-        for(uint8 j = 0; j < prev.length;j++){
+        rand = uint256(keccak256(now, i));
+        for(uint j = 0; j < prev.length;j++){
           if (rand == prev[j]){
             duplicate = true;
             break;
           }
         }
-      }while(duplicate);
-      _trial[room][uint8(i/2)].push(rand);
-      prev.push();
+      } 
+      while(duplicate);
+      _trial[room][uint8(i/2)].push(rand/13);
+      prev.push(rand);
     }
+    
+    
+    
+    
   }
 
 }
