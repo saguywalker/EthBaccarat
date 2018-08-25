@@ -15,12 +15,12 @@ contract ethBaccarat {
         uint sizeRoom;
         uint valueToCreate;
     }
-	
+
     mapping(uint => mapping(uint => uint[])) matchPlayerToGame;
     mapping(uint => Room) roomInfo;
     mapping(address => uint) playerToRoom;
-	
-	
+
+
     constructor() public {
         roomNo = 1;
     }
@@ -32,7 +32,7 @@ contract ethBaccarat {
         ++roomNo;
         return roomID;
     }
-	
+
     function FineToClose(uint roomID) public payable  {
         uint numberPlayer = roomInfo[roomID].playerAddr.length;
         uint refund = roomInfo[roomID].valueToCreate/numberPlayer;
@@ -40,7 +40,7 @@ contract ethBaccarat {
         for ( uint i = 0 ; i <= numberPlayer ; i++){
             roomInfo[roomID].playerAddr[i].transfer(refund);
         }
-    }	
+    }
 
     function JoinRoom() public returns(uint) {
         require(playerToRoom[msg.sender] == 0, "This person already joins in another room");
@@ -55,7 +55,7 @@ contract ethBaccarat {
         require(roomID != 0, "This person is not in any room yet.");
         removePlayerInRoom(roomID, msg.sender);
     }
-    
+
     function SetReady() public {
         uint roomID = playerToRoom[msg.sender];
         Room memory r = roomInfo[roomID];
@@ -65,7 +65,7 @@ contract ethBaccarat {
             ++roomInfo[roomID].readyCount;
         }
     }
-    
+
     function GetRoomByRoomNo(uint roomID) public view returns(address[], bool[], uint, uint) {
         Room memory r = roomInfo[roomID];
         return (r.playerAddr, r.playerReady, r.readyCount, r.sizeRoom);
@@ -112,7 +112,7 @@ contract ethBaccarat {
         playerToRoom[playerAddr] = roomID;
     }
 
-    // IndexPlayerInRoom returns the index of the playerAddr list in the room. 
+    // IndexPlayerInRoom returns the index of the playerAddr list in the room.
     function IndexPlayerInRoom(Room r, address playerAddr) private pure returns(uint) {
         for (uint i = 0; i < r.playerAddr.length ; i++) {
             if(r.playerAddr[i] == playerAddr){
@@ -137,7 +137,7 @@ contract ethBaccarat {
         delete roomInfo[roomID].playerReady[lstPlayerID];
         roomInfo[roomID].playerReady.length--;
     }
-    
+
     // removePlayerInRoom removes the playerAddr out of the given room.
     function removePlayerInRoom(uint roomID, address playerAddr) private {
         Room memory r = roomInfo[roomID];
@@ -151,13 +151,12 @@ contract ethBaccarat {
         removePlayerFromReadyList(roomID, idxPlayer);
     }
 
-    function randomCard(uint8 room) private {
-        bool duplicate;
+    function randomCard(uint room) private {
         uint256 numPlayers = roomInfo[room].playerAddr.length;
         uint256 rand;
         uint256[] prev;
-        duplicate = false;
-        for(uint i = 0; i < numPlayers;i++){
+        bool duplicate;
+        for(uint i = 0; i < numPlayers * 2;i++){
             duplicate = false;
             do{
                 rand = uint256(keccak256(now, i));
@@ -168,8 +167,12 @@ contract ethBaccarat {
                     }
                 }
             } while(duplicate);
-            matchPlayerToGame[room][uint8(i/2)].push(rand/13);
             prev.push(rand);
+            rand /= 13;
+            if(rand == 10 || rand == 11 || rand == 12){
+              rand = 0;
+            }
+            matchPlayerToGame[room][uint8(i/2)].push(rand);
         }
     }
 }
