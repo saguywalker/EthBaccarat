@@ -65,15 +65,13 @@ contract ethBaccarat {
             roomInfo[roomID].playerReady[idxPlayer] = true;
             ++roomInfo[roomID].readyCount;
         }
+		
+		
     }
 
-    function GetRoomByRoomNo(uint roomID) public view returns(address[], bool[], uint, uint) {
-        Room memory r = roomInfo[roomID];
-        return (r.playerAddr, r.playerReady, r.readyCount, r.sizeRoom);
-    }
-
-    function GetRoomNoByAddress() public view returns(uint) {
-        return playerToRoom[msg.sender];
+    function GetRoomByAddress() public view returns(uint , address[], bool[], uint, uint) {
+	Room memory r = roomInfo[roomID];
+        return (playerToRoom[msg.sender] , r.playerAddr, r.playerReady, r.readyCount, r.sizeRoom);
     }
 
     function GetCards(uint roomID, uint idxPerson) public view returns(uint[]) {
@@ -82,6 +80,7 @@ contract ethBaccarat {
 
     function endRound(uint roomID) public payable {
         Room memory r = roomInfo[roomID];
+		randomCard(roomID);
         for(uint i = 1; i<r.sizeRoom; i++){
             uint status = compareWin(0, i, roomID);
             if(status == WINSTATUS){
