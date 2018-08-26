@@ -27,7 +27,7 @@ contract ethBaccarat {
 
     function CreateRoom() public payable returns(uint) {
         uint roomID = roomNo;
-        require(msg.value >= 100000000000000000 wei, "Please transfer more than 0.1 ETH");
+        require(msg.value >= 100000000000000000, "Please transfer more than 0.1 ETH");
         roomInfo[roomID] = Room(new address[](0), new bool[](0), 0,3, msg.value);
         addPlayerToRoom(roomID, msg.sender);
         ++roomNo;
@@ -46,17 +46,14 @@ contract ethBaccarat {
     }
 
     function JoinRoom() public payable returns(uint) {
-        require(playerToRoom[msg.sender] == 0, "This person already joins in another room");
         uint roomID = findEmptyRoom();
-        require(msg.value >= 50000000000000000 wei, "Please transfer more than 0.05 ETH");
-        require(roomID != uint(-1), "No room available");
+        require(msg.value >= 50000000000000000, "Please transfer more than 0.05 ETH");
         addPlayerToRoom(roomID, msg.sender);
         return roomID;
     }
 
     function ExitRoom() public {
         uint roomID = playerToRoom[msg.sender];
-        require(roomID != 0, "This person is not in any room yet.");
         removePlayerInRoom(roomID, msg.sender);
     }
 
@@ -87,7 +84,6 @@ contract ethBaccarat {
         Room memory r = roomInfo[roomID];
         for(uint i = 1; i<r.sizeRoom; i++){
             uint status = compareWin(0, i, roomID);
-            require(status == WINSTATUS || status == DRAWSTATUS || status == LOSESTATUS, "status is invalid");
             if(status == WINSTATUS){
                 r.playerAddr[0].transfer(100000000000000000);
             } else if (status == LOSESTATUS) {
@@ -158,8 +154,6 @@ contract ethBaccarat {
     function removePlayerInRoom(uint roomID, address playerAddr) private {
         Room memory r = roomInfo[roomID];
         uint idxPlayer = IndexPlayerInRoom(r, playerAddr);
-        require(idxPlayer != uint(-1), "cannot find playerAddress in the room");
-        require(idxPlayer != 0, "caller is a host");
 
         roomInfo[roomID].readyCount--;
         playerToRoom[playerAddr] = 0;
