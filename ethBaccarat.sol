@@ -118,7 +118,6 @@ contract ethBaccarat {
     }
 
     function addPlayerToRoom(uint roomID, address playerAddr) private {
-        roomInfo[roomID].readyCount++;
         roomInfo[roomID].playerAddr.push(playerAddr);
         roomInfo[roomID].playerReady.push(false);
         playerToRoom[playerAddr] = roomID;
