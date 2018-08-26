@@ -66,11 +66,14 @@ contract ethBaccarat {
             ++roomInfo[roomID].readyCount;
         }
 		
-		
     }
 
     function GetRoomByAddress() public view returns(uint , address[], bool[], uint, uint) {
-	Room memory r = roomInfo[roomID];
+        uint roomID = playerToRoom[msg.sender];
+        if (roomID == 0) {
+            return (uint(0), new address[](0), new bool[](0), uint(0), uint(0));
+        }
+	    Room memory r = roomInfo[roomID];
         return (playerToRoom[msg.sender] , r.playerAddr, r.playerReady, r.readyCount, r.sizeRoom);
     }
 
