@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.22;
 
 contract ethBaccarat {
 
@@ -165,12 +165,12 @@ contract ethBaccarat {
     function randomCard(uint room) private {
         uint256 numPlayers = roomInfo[room].playerAddr.length;
         uint256 rand;
-        uint256[] prev;
+        uint256[] memory prev = new uint256[](numPlayers * 2);
         bool duplicate;
         for(uint i = 0; i < numPlayers * 2;i++){
             duplicate = false;
             do{
-                rand = uint256(keccak256(now, i));
+                rand = uint256(keccak256(abi.encodePacked(now, i)));
                 for(uint j = 0; j < prev.length;j++){
                     if (rand == prev[j]){
                         duplicate = true;
@@ -178,7 +178,7 @@ contract ethBaccarat {
                     }
                 }
             } while(duplicate);
-            prev.push(rand);
+            prev[i] = rand;
             rand /= 13;
             if(rand == 10 || rand == 11 || rand == 12){
                 rand = 0;
